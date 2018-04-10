@@ -1,0 +1,47 @@
+menu "Example Configuration"
+
+choice ESP_WIFI_MODE
+    prompt "AP or STA"
+    default ESP_WIFI_IS_STATION
+    help
+        Whether the esp32 is softAP or station.
+
+config ESP_WIFI_IS_SOFTAP
+    bool "SoftAP"
+config ESP_WIFI_IS_STATION
+    bool "Station"
+endchoice
+
+config ESP_WIFI_MODE_AP
+    bool
+    default y if ESP_WIFI_IS_SOFTAP
+    default n if ESP_WIFI_IS_STATION
+
+config ESP_WIFI_SSID
+    string "WiFi SSID"
+    default "myssid"
+    help
+	SSID (network name) for the example to connect to.
+
+config ESP_WIFI_PASSWORD
+    string "WiFi Password"
+    default "mypassword"
+    help
+	WiFi password (WPA or WPA2) for the example to use.
+		
+config MAX_STA_CONN
+    int "Max STA conn"
+    default 4
+    help
+	Max number of the STA connects to AP.
+
+config SET_RAW_ADV_DATA
+    bool "Use raw data for advertising packets and scan response data"
+    help
+        If this config item is set, raw binary data will be used to generate advertising & scan response data.
+        This option uses the esp_ble_gap_config_adv_data_raw() and esp_ble_gap_config_scan_rsp_data_raw() functions.
+
+        If this config item is unset, advertising & scan response data is provided via a higher-level esp_ble_adv_data_t structure.
+        The lower layer will generate the BLE packets. This option has higher overhead at runtime.
+
+endmenu
