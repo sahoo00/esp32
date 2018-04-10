@@ -214,7 +214,7 @@ static const uint8_t measurement_ccc[2]      	   = {0x00, 0x00};
 static const uint8_t char_value[4]                 = {0x11, 0x22, 0x33, 0x44};
 
 /* Full Database Description - Used to add attributes into the database */
-static const esp_gatts_attr_db_t gatt_db1[HRS_IDX_NB] =
+static const esp_gatts_attr_db_t gatt_db[HRS_IDX_NB] =
 {
     // Service Declaration
     [IDX_SVC]        =
