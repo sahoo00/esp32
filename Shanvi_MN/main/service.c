@@ -89,6 +89,7 @@ static uint8_t adv_config_done       = 0;
 
 uint16_t mn_handle_table[HRS_IDX_NB];
 uint8_t conn_enable = 0x00;
+uint8_t status_notify_enable = 0x00;
 
 typedef struct {
     uint8_t                 *prepare_buf;
@@ -122,6 +123,16 @@ static uint8_t service_uuid[16] = {
     /* LSB <--------------------------------------------------------------------------------> MSB */
     //first uuid, 16bit, [12],[13] is the value
 	0xc6, 0x1d, 0x93, 0x6e, 0x09, 0x03, 0x63, 0x8b,	0xe8, 0x49, 0xa5, 0xcf, 0x02, 0x00, 0xba, 0xde,
+};
+
+static uint8_t char_uuid[5][16] = {
+    /* LSB <--------------------------------------------------------------------------------> MSB */
+    //first uuid, 16bit, [12],[13] is the value
+	{0xc6, 0x1d, 0x93, 0x6e, 0x09, 0x03, 0x63, 0x8b,	0xe8, 0x49, 0xa5, 0xcf, 0x10, 0x00, 0xba, 0xde},
+	{0xc6, 0x1d, 0x93, 0x6e, 0x09, 0x03, 0x63, 0x8b,	0xe8, 0x49, 0xa5, 0xcf, 0x11, 0x00, 0xba, 0xde},
+	{0xc6, 0x1d, 0x93, 0x6e, 0x09, 0x03, 0x63, 0x8b,	0xe8, 0x49, 0xa5, 0xcf, 0x12, 0x00, 0xba, 0xde},
+	{0xc6, 0x1d, 0x93, 0x6e, 0x09, 0x03, 0x63, 0x8b,	0xe8, 0x49, 0xa5, 0xcf, 0x13, 0x00, 0xba, 0xde},
+	{0xc6, 0x1d, 0x93, 0x6e, 0x09, 0x03, 0x63, 0x8b,	0xe8, 0x49, 0xa5, 0xcf, 0x14, 0x00, 0xba, 0xde},
 };
 
 /* The length of adv data must be less than 31 bytes */
@@ -219,7 +230,7 @@ static const esp_gatts_attr_db_t gatt_db[HRS_IDX_NB] =
     // Service Declaration
     [IDX_SVC]        =
     {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&primary_service_uuid, ESP_GATT_PERM_READ,
-      sizeof(uint16_t), sizeof(MN_SAFETY_SERVICE), (uint8_t *)&MN_SAFETY_SERVICE}},
+    		ESP_UUID_LEN_128, ESP_UUID_LEN_128, (uint8_t *)&service_uuid}},
 
     /* Characteristic Declaration */
     [IDX_CHAR_A]     =
@@ -228,7 +239,7 @@ static const esp_gatts_attr_db_t gatt_db[HRS_IDX_NB] =
 
     /* Characteristic Value */
     [IDX_CHAR_VAL_A] =
-    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&MNCH_SAFETY_ALERT, ESP_GATT_PERM_WRITE,
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_128, (uint8_t *)&char_uuid[0], ESP_GATT_PERM_WRITE,
       GATTS_DEMO_CHAR_VAL_LEN_MAX, sizeof(char_value), (uint8_t *)char_value}},
 
     /* Characteristic Declaration */
@@ -238,7 +249,7 @@ static const esp_gatts_attr_db_t gatt_db[HRS_IDX_NB] =
 
     /* Characteristic Value */
     [IDX_CHAR_VAL_B]  =
-    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&MNCH_ALERT_STATUS, ESP_GATT_PERM_READ,
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_128, (uint8_t *)&char_uuid[1], ESP_GATT_PERM_READ,
       GATTS_DEMO_CHAR_VAL_LEN_MAX, sizeof(char_value), (uint8_t *)char_value}},
 
     /* Client Characteristic Configuration Descriptor */
@@ -253,7 +264,7 @@ static const esp_gatts_attr_db_t gatt_db[HRS_IDX_NB] =
 
     /* Characteristic Value */
     [IDX_CHAR_VAL_C] =
-    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&MN_CHAR_WIFI_SSID, ESP_GATT_PERM_WRITE,
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_128, (uint8_t *)&char_uuid[2], ESP_GATT_PERM_WRITE,
       GATTS_DEMO_CHAR_VAL_LEN_MAX, sizeof(char_value), (uint8_t *)char_value}},
 
     /* Characteristic Declaration */
@@ -263,7 +274,7 @@ static const esp_gatts_attr_db_t gatt_db[HRS_IDX_NB] =
 
     /* Characteristic Value */
     [IDX_CHAR_VAL_D] =
-    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&MN_CHAR_WIFI_PASS, ESP_GATT_PERM_WRITE,
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_128, (uint8_t *)&char_uuid[3], ESP_GATT_PERM_WRITE,
       GATTS_DEMO_CHAR_VAL_LEN_MAX, sizeof(char_value), (uint8_t *)char_value}},
 
     /* Characteristic Declaration */
@@ -273,7 +284,7 @@ static const esp_gatts_attr_db_t gatt_db[HRS_IDX_NB] =
 
     /* Characteristic Value */
     [IDX_CHAR_VAL_E] =
-    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_16, (uint8_t *)&MN_CHAR_WIFI_CONN, ESP_GATT_PERM_WRITE,
+    {{ESP_GATT_AUTO_RSP}, {ESP_UUID_LEN_128, (uint8_t *)&char_uuid[4], ESP_GATT_PERM_WRITE,
       GATTS_DEMO_CHAR_VAL_LEN_MAX, sizeof(char_value), (uint8_t *)char_value}},
 
     /* Client Characteristic Configuration Descriptor */
@@ -449,8 +460,14 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                 // the data length of gattc write  must be less than GATTS_DEMO_CHAR_VAL_LEN_MAX.
                 ESP_LOGI(GATTS_TABLE_TAG, "GATT_WRITE_EVT, handle = %d, value len = %d, value :", param->write.handle, param->write.len);
                 esp_log_buffer_hex(GATTS_TABLE_TAG, param->write.value, param->write.len);
+                if (mn_handle_table[IDX_CHAR_VAL_A] == param->write.handle) {
+                	if (param->write.len > 0 && param->write.value[0] == 0x00) {
+
+                	}
+                }
                 if (mn_handle_table[IDX_CHAR_CFG_B] == param->write.handle && param->write.len == 2){
                     uint16_t descr_value = param->write.value[1]<<8 | param->write.value[0];
+                    status_notify_enable = 0.00;
                     if (descr_value == 0x0001){
                         ESP_LOGI(GATTS_TABLE_TAG, "notify enable");
                         uint8_t notify_data[3];
@@ -458,6 +475,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                         {
                             notify_data[i] = i % 0xff;
                         }
+                        status_notify_enable = 0x01;
                         //the size of notify_data[] need less than MTU size
                         esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, mn_handle_table[IDX_CHAR_VAL_B],
                                                 sizeof(notify_data), notify_data, false);
@@ -468,6 +486,7 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                         {
                             indicate_data[i] = i % 0xff;
                         }
+                        status_notify_enable = 0x02;
                         //the size of indicate_data[] need less than MTU size
                         esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, mn_handle_table[IDX_CHAR_VAL_B],
                                             sizeof(indicate_data), indicate_data, true);
