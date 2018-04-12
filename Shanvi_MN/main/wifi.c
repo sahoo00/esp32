@@ -214,5 +214,11 @@ void app_wifi_main()
     xTaskCreate(&request_task, "request_task", 8192, NULL, 5, NULL);
 }
 
+bool is_wifi_connected() {
+	if( xEventGroupGetBits( wifi_event_group ) != 0 ) {
+		return true;
+	}
+	return false;
+}
 
 
