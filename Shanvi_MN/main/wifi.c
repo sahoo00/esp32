@@ -207,6 +207,36 @@ static void request_task(void *pvParameters)
     vTaskDelete(NULL);
 }
 
+bool processUrl(char *url) {
+    request_t *req;
+    int status;
+    req = req_new(url);
+    status = req_perform(req);
+    print_string(req->buffer->data, req->buffer->bytes_write);
+    req_clean(req);
+    ESP_LOGI(TAG, "Finish request, status=%d, freemem=%d", status, esp_get_free_heap_size());
+    if (status == 200) {
+    	return true;
+    }
+    return false;
+}
+
+bool sendTrigger(long did, uint32_t ckey) {
+    char url[256];
+    sprintf(url, "http://shanvishield.com/safety/safety.php?go=cTrigger&did=%ld&ckey=%d", did, ckey);
+    return processUrl(url);
+}
+bool cancelTrigger(long did, uint32_t ckey) {
+    char url[256];
+    sprintf(url, "http://shanvishield.com/safety/safety.php?go=dTrigger&did=%ld&ckey=%d", did, ckey);
+    return processUrl(url);
+}
+bool sendLocation(long did, float lat, float lon, float alt) {
+    char url[256];
+    sprintf(url, "http://shanvishield.com/safety/safety.php?go=addDeviceLocation&did=%ld&lat=%f&lon=%f&alt=%f", did, lat, lon, alt);
+    return processUrl(url);
+}
+
 void app_wifi_main()
 {
     ESP_LOGI(TAG, "ESP_WIFI_MODE_STA");

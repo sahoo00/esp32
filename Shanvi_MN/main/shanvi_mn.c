@@ -40,9 +40,17 @@ void app_main()
     }
     ESP_ERROR_CHECK(ret);
     
+
     ESP_LOGI(TAG, "Start Wifi");
     app_wifi_main();
 
     ESP_LOGI(TAG, "Start Shanvi MN");
     app_gatts_main();
+
+    ESP_LOGI(TAG, "Start Shanvi MN Client");
+    app_client_main();
+
+    ESP_LOGI(TAG, "Start Shanvi MN Router");
+    router_start();
+
 }
