@@ -364,6 +364,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         }
         ESP_LOGI(GATTC_TAG, "write char success ");
         esp_ble_gap_disconnect(gl_profile_tab[PROFILE_A_APP_ID].remote_bda);
+        data_len = 0;
         break;
     case ESP_GATTC_DISCONNECT_EVT:
         connect = false;
