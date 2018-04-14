@@ -59,7 +59,8 @@ typedef struct sh_ack_packet {
 
 typedef struct sh_info_packet {
 	uint8_t type;
-	long device_id;
+	long long device_id;
+	long long device_id_2;
 } sh_info_packet_t;
 
 
@@ -139,6 +140,7 @@ uint8_t * get_h_ptr(sh_packet_t * p_pkt) {
 	default:
 		break;
 	}
+	ESP_LOGI(TAG, "Pkt type: %d", p_pkt->trgn.type);
 	return NULL;
 }
 
@@ -165,7 +167,7 @@ void addQueue(sh_packet_t * p_pkt) {
 	if (hc > 10) {
 		return;
 	}
-	if (qc > 3) {
+	if (qc > 10) {
 		return;
 	}
 	set_q_count(p_pkt, qc + 1);
@@ -205,15 +207,30 @@ esp_err_t removeQueue(sh_packet_t * p_pkt) {
 		status = ESP_FAIL;
 	}
 	taskEXIT_CRITICAL(&sh_mutex);
-	//esp_log_buffer_hex(TAG, p_pkt, sizeof(sh_trg_packet_t));
+	esp_log_buffer_hex(TAG, p_pkt, sizeof(sh_trg_packet_t));
 	//esp_log_buffer_hex(TAG, sh_queue, sizeof(sh_trg_packet_t));
 	ESP_LOGI(TAG, "Remove end start:%d, num:%d, Conected:%d", sh_start, sh_num, is_wifi_connected());
 	return status;
 }
 
+void printDataSizes() {
+	  printf("sizeof(short): %d\n", (int) sizeof(short));
+
+	  printf("sizeof(int): %d\n", (int) sizeof(int));
+
+	  printf("sizeof(long): %d\n", (int) sizeof(long));
+
+	  printf("sizeof(long long): %d\n", (int) sizeof(long long));
+
+	  printf("sizeof(size_t): %d\n", (int) sizeof(size_t));
+
+	  printf("sizeof(void *): %d\n", (int) sizeof(void *));
+}
+
 void router(void *pvParameter)
 {
     while(1) {
+    	//printDataSizes();
     	ESP_LOGI(TAG, "freemem=%d",esp_get_free_heap_size());
     	sh_packet_t pkt;
     	if (removeQueue(&pkt) == ESP_OK) {
@@ -284,7 +301,9 @@ void add_hop(void * data, uint8_t h) {
 
 bool check_hop(void * data, uint8_t h) {
 	sh_packet_t * p_pkt = (sh_packet_t *) data;
+	esp_log_buffer_hex(TAG, p_pkt, sizeof(sh_trg_packet_t));
 	uint8_t * hptr = get_h_ptr(p_pkt);
+	ESP_LOGI(TAG, "h count:0x%x", (int)hptr);
 	bool found = false;
 	for (uint8_t i = 0; i < hptr[0]; i++) {
 		if (hptr[1 + i] == h) {
@@ -294,26 +313,39 @@ bool check_hop(void * data, uint8_t h) {
 	return found;
 }
 
+void get_hex_buffer(char * str, const void * p, int len) {
+	for (uint32_t i = 0; i < len; i++) {
+		sprintf(&str[2 * i], "%02x", ((uint8_t*) p)[i]);
+	}
+}
+
 bool sendData(sh_packet_t * p_pkt) {
 	bool status = false;
 	if (is_wifi_connected()) {
+		char buffer[64];
+		get_hex_buffer(buffer, get_h_ptr(p_pkt), MAX_HOPS_DATA + 1);
 		switch (p_pkt->trgn.type) {
-		case PKT_TRGN: status = sendTrigger(p_pkt->info.device_id, p_pkt->trgn.ckey); break;
-		case PKT_TRGC: status = cancelTrigger(p_pkt->info.device_id, p_pkt->trgc.ckey); break;
+		case PKT_TRGN:
+			status = sendTrigger(p_pkt->info.device_id, p_pkt->trgn.ckey, buffer);
+			break;
+		case PKT_TRGC:
+			status = cancelTrigger(p_pkt->info.device_id, p_pkt->trgc.ckey, buffer);
+			break;
 		case PKT_ACK: break;;
 		case PKT_LOC:
-			status = sendLocation(p_pkt->info.device_id, p_pkt->location.lat, p_pkt->location.lon, p_pkt->location.alt);
+			status = sendLocation(p_pkt->info.device_id, p_pkt->location.lat,
+					p_pkt->location.lon, p_pkt->location.alt, buffer);
 			break;
 		default:
 			break;
 		}
 	}
 	if (!status) {
-		if (!isClientConnected()) {
-			start_client_scan();
+		if (!isSimpleClientConnected()) {
+			prepare_to_send_simple((uint8_t*)p_pkt, get_pkt_len(p_pkt));
 		}
-		if (isClientReady()) {
-			send_packet((uint8_t*)p_pkt, get_pkt_len(p_pkt));
+		if (isSimpleClientReady()) {
+			send_packet_simple((uint8_t*)p_pkt, get_pkt_len(p_pkt));
 		}
 	}
 	return false;

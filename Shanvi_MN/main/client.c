@@ -140,15 +140,24 @@ static struct gattc_profile_inst gl_profile_tab[PROFILE_NUM] = {
 
 };
 
-void start_client_scan(void) {
+void pre_start_client_scan() {
+	stop_advertising();
     stop_scan_done = false;
     Isconnecting = false;
+    esp_err_t scan_ret = esp_ble_gap_set_scan_params(&ble_scan_params);
+    if (scan_ret){
+        ESP_LOGE(GATTC_TAG, "set scan params error, error code = %x", scan_ret);
+    }
+}
+
+void start_client_scan(void) {
     uint32_t duration = 30;
     esp_ble_gap_start_scanning(duration);
 }
 
 void stop_client_scan(void) {
     esp_ble_gap_stop_scanning();
+	start_advertising();
 }
 
 static bool isUUIDpresent(esp_gatt_srvc_id_t *srvc_id, esp_bt_uuid_t * p_uuid) {
@@ -167,6 +176,8 @@ static bool isUUIDpresent(esp_gatt_srvc_id_t *srvc_id, esp_bt_uuid_t * p_uuid) {
 			}
 		}
 		if (match) {
+			ESP_LOGI(GATTC_TAG, "UUID128:");
+			esp_log_buffer_hex(GATTC_TAG, p_target_uuid, 16);
 			return true;
 		}
 
@@ -182,10 +193,7 @@ static void gattc_profile_a_event_handler(esp_gattc_cb_event_t event, esp_gatt_i
     switch (event) {
     case ESP_GATTC_REG_EVT:
         ESP_LOGI(GATTC_TAG, "REG_EVT");
-        esp_err_t scan_ret = esp_ble_gap_set_scan_params(&ble_scan_params);
-        if (scan_ret){
-            ESP_LOGE(GATTC_TAG, "set scan params error, error code = %x", scan_ret);
-        }
+        pre_start_client_scan();
         break;
     /* one device connect successfully, all profiles callback function will get the ESP_GATTC_CONNECT_EVT,
      so must compare the mac address to check which device is connected, so it is a good choice to use ESP_GATTC_OPEN_EVT. */
@@ -636,7 +644,7 @@ void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
                   param->update_conn_params.timeout);
         break;
     case ESP_GAP_BLE_SCAN_PARAM_SET_COMPLETE_EVT: {
-    	//start_client_scan();
+    	start_client_scan();
         break;
     }
     case ESP_GAP_BLE_SCAN_START_COMPLETE_EVT:
@@ -663,7 +671,7 @@ void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
             }
             if (conn_device_a && conn_device_b && !stop_scan_done){
                 stop_scan_done = true;
-                esp_ble_gap_stop_scanning();
+                stop_client_scan();
                 ESP_LOGI(GATTC_TAG, "all devices are connected");
                 break;
             }
@@ -758,6 +766,13 @@ static void esp_gattc_cb(esp_gattc_cb_event_t event, esp_gatt_if_t gattc_if, esp
 void app_client_main()
 {
     esp_err_t ret;
+
+    //register the  callback function to the gap module
+    ret = esp_ble_gap_register_callback(esp_gap_cb);
+    if (ret){
+        ESP_LOGE(GATTC_TAG, "%s gap register failed, error code = %x\n", __func__, ret);
+        return;
+    }
 
     //register the callback function to the gattc module
     ret = esp_ble_gattc_register_callback(esp_gattc_cb);

@@ -40,9 +40,11 @@
 	0xc6, 0x1d, 0x93, 0x6e, 0x09, 0x03, 0x63, 0x8b,	0xe8, 0x49, 0xa5, 0xcf, 0x14, 0x00, 0xba, 0xde,
 
 void print_string(char *data, int len);
+void app_ble_main();
 void app_gatts_main();
 void app_wifi_main();
 void app_client_main();
+void app_simple_client_main();
 
 void set_ssid(const char * ssid, int len);
 void set_pass(const char * pass, int len);
@@ -53,22 +55,29 @@ void blinky_start();
 void blinky_stop();
 
 void notify_connection(uint8_t *data, int len);
+void stop_advertising();
+void start_advertising();
 
-bool sendTrigger(long did, uint32_t ckey);
-bool cancelTrigger(long did, uint32_t ckey);
-bool sendLocation(long did, float lat, float lon, float alt);
+bool sendTrigger(long did, uint32_t ckey, const char* rinfo);
+bool cancelTrigger(long did, uint32_t ckey, const char* rinfo);
+bool sendLocation(long did, float lat, float lon, float alt, const char* rinfo);
 
 void processData(uint8_t *data, int len);
 void router_start();
 void router_stop();
 
+void pre_start_client_scan();
 void start_client_scan(void);
 void stop_client_scan(void);
 bool isClientConnected();
 bool isClientReady();
-void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param);
 void add_hop(void * data, uint8_t h);
 bool check_hop(void * data, uint8_t h);
-void send_packet(uint8_t * data, int len);
+void pre_start_simple_client_scan();
+void stop_simple_client_scan(void);
+void send_packet_simple(uint8_t * data, int len);
+bool isSimpleClientConnected();
+bool isSimpleClientReady();
+void prepare_to_send_simple(uint8_t * data, int len);
 
 #endif /* MAIN_COMMON_H_ */

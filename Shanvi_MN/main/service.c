@@ -98,6 +98,10 @@ typedef struct {
 
 static prepare_type_env_t prepare_write_env;
 
+static bool service_advertising = false;
+
+esp_gatt_if_t curr_gatts_if = ESP_GATT_IF_NONE;
+
 #ifdef CONFIG_SET_RAW_ADV_DATA
 static uint8_t raw_adv_data[] = {
         /* flags */
@@ -296,35 +300,23 @@ static const esp_gatts_attr_db_t gatt_db[HRS_IDX_NB] =
 
 static void gap_event_handler(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *param)
 {
-    esp_gap_cb(event, param);
     switch (event) {
-    #ifdef CONFIG_SET_RAW_ADV_DATA
-        case ESP_GAP_BLE_ADV_DATA_RAW_SET_COMPLETE_EVT:
-            adv_config_done &= (~ADV_CONFIG_FLAG);
-            if (adv_config_done == 0){
-                esp_ble_gap_start_advertising(&adv_params);
-            }
-            break;
-        case ESP_GAP_BLE_SCAN_RSP_DATA_RAW_SET_COMPLETE_EVT:
-            adv_config_done &= (~SCAN_RSP_CONFIG_FLAG);
-            if (adv_config_done == 0){
-                esp_ble_gap_start_advertising(&adv_params);
-            }
-            break;
-    #else
+
         case ESP_GAP_BLE_ADV_DATA_SET_COMPLETE_EVT:
             adv_config_done &= (~ADV_CONFIG_FLAG);
-            if (adv_config_done == 0){
+            if (adv_config_done == 0) {
                 esp_ble_gap_start_advertising(&adv_params);
+                service_advertising = true;
             }
             break;
         case ESP_GAP_BLE_SCAN_RSP_DATA_SET_COMPLETE_EVT:
             adv_config_done &= (~SCAN_RSP_CONFIG_FLAG);
-            if (adv_config_done == 0){
+            if (adv_config_done == 0) {
                 esp_ble_gap_start_advertising(&adv_params);
+                service_advertising = true;
             }
             break;
-    #endif
+
         case ESP_GAP_BLE_ADV_START_COMPLETE_EVT:
             /* advertising start complete event to indicate advertising start successfully or failed */
             if (param->adv_start_cmpl.status != ESP_BT_STATUS_SUCCESS) {
@@ -418,42 +410,23 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
 {
 	ESP_LOGI(GATTS_TABLE_TAG, "Event : %d", event);
     switch (event) {
-        case ESP_GATTS_REG_EVT:{
+        case ESP_GATTS_REG_EVT: {
             esp_err_t set_dev_name_ret = esp_ble_gap_set_device_name(SAMPLE_DEVICE_NAME);
             if (set_dev_name_ret){
                 ESP_LOGE(GATTS_TABLE_TAG, "set device name failed, error code = %x", set_dev_name_ret);
             }
-    #ifdef CONFIG_SET_RAW_ADV_DATA
-            esp_err_t raw_adv_ret = esp_ble_gap_config_adv_data_raw(raw_adv_data, sizeof(raw_adv_data));
-            if (raw_adv_ret){
-                ESP_LOGE(GATTS_TABLE_TAG, "config raw adv data failed, error code = %x ", raw_adv_ret);
-            }
-            adv_config_done |= ADV_CONFIG_FLAG;
-            esp_err_t raw_scan_ret = esp_ble_gap_config_scan_rsp_data_raw(raw_scan_rsp_data, sizeof(raw_scan_rsp_data));
-            if (raw_scan_ret){
-                ESP_LOGE(GATTS_TABLE_TAG, "config raw scan rsp data failed, error code = %x", raw_scan_ret);
-            }
-            adv_config_done |= SCAN_RSP_CONFIG_FLAG;
-    #else
-            //config adv data
-            esp_err_t ret = esp_ble_gap_config_adv_data(&adv_data);
-            if (ret){
-                ESP_LOGE(GATTS_TABLE_TAG, "config adv data failed, error code = %x", ret);
-            }
-            adv_config_done |= ADV_CONFIG_FLAG;
-            //config scan response data
-            ret = esp_ble_gap_config_adv_data(&scan_rsp_data);
-            if (ret){
-                ESP_LOGE(GATTS_TABLE_TAG, "config scan response data failed, error code = %x", ret);
-            }
-            adv_config_done |= SCAN_RSP_CONFIG_FLAG;
-    #endif
-            esp_err_t create_attr_ret = esp_ble_gatts_create_attr_tab(gatt_db, gatts_if, HRS_IDX_NB, SVC_INST_ID);
-            if (create_attr_ret){
-                ESP_LOGE(GATTS_TABLE_TAG, "create attr table failed, error code = %x", create_attr_ret);
-            }
+
+        	curr_gatts_if = gatts_if;
+        	start_advertising();
+
+        	esp_err_t create_attr_ret = esp_ble_gatts_create_attr_tab(gatt_db, curr_gatts_if,
+        			HRS_IDX_NB, SVC_INST_ID);
+        	if (create_attr_ret) {
+        		ESP_LOGE(GATTS_TABLE_TAG, "create attr table failed, error code = %x",
+        				create_attr_ret);
+        	}
         }
-       	    break;
+        	break;
         case ESP_GATTS_READ_EVT:
             ESP_LOGI(GATTS_TABLE_TAG, "ESP_GATTS_READ_EVT");
        	    break;
@@ -630,7 +603,7 @@ static void gatts_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_t gatts_
     } while (0);
 }
 
-void app_gatts_main()
+void app_ble_main()
 {
     esp_err_t ret;
 
@@ -660,6 +633,11 @@ void app_gatts_main()
         ESP_LOGE(GATTS_TABLE_TAG, "%s enable bluetooth failed: %s", __func__, esp_err_to_name(ret));
         return;
     }
+}
+
+void app_gatts_main()
+{
+    esp_err_t ret;
 
     ret = esp_ble_gatts_register_callback(gatts_event_handler);
     if (ret){
@@ -699,4 +677,28 @@ void notify_connection(uint8_t *data, int len) {
 				mn_profile_tab[PROFILE_APP_IDX].conn_id, mn_handle_table[IDX_CHAR_VAL_E],
 				len, data, false);
 	}
+}
+
+void stop_advertising() {
+	ESP_LOGI(GATTS_TABLE_TAG, "stop advertising");
+	esp_ble_gap_stop_advertising();
+	service_advertising = false;
+}
+
+void start_advertising() {
+	ESP_LOGI(GATTS_TABLE_TAG, "start advertising");
+
+    //config adv data
+    esp_err_t ret = esp_ble_gap_config_adv_data(&adv_data);
+    if (ret){
+        ESP_LOGE(GATTS_TABLE_TAG, "config adv data failed, error code = %x", ret);
+    }
+    adv_config_done |= ADV_CONFIG_FLAG;
+    //config scan response data
+    ret = esp_ble_gap_config_adv_data(&scan_rsp_data);
+    if (ret){
+        ESP_LOGE(GATTS_TABLE_TAG, "config scan response data failed, error code = %x", ret);
+    }
+    adv_config_done |= SCAN_RSP_CONFIG_FLAG;
+
 }

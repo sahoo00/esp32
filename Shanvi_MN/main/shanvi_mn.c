@@ -44,13 +44,21 @@ void app_main()
     ESP_LOGI(TAG, "Start Wifi");
     app_wifi_main();
 
-    ESP_LOGI(TAG, "Start Shanvi MN");
-    app_gatts_main();
+    ESP_LOGI(TAG, "Start BLE");
+    app_ble_main();
 
+/*
+    ESP_LOGI(TAG, "Start Shanvi MN Service");
+    app_gatts_main();
+*/
+/*
     ESP_LOGI(TAG, "Start Shanvi MN Client");
     app_client_main();
 
+
     ESP_LOGI(TAG, "Start Shanvi MN Router");
-    router_start();
+    //router_start();
+*/
+    app_simple_client_main();
 
 }

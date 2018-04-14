@@ -221,19 +221,20 @@ bool processUrl(char *url) {
     return false;
 }
 
-bool sendTrigger(long did, uint32_t ckey) {
+bool sendTrigger(long did, uint32_t ckey, const char * rinfo) {
     char url[256];
-    sprintf(url, "http://shanvishield.com/safety/safety.php?go=cTrigger&did=%ld&ckey=%d", did, ckey);
+    sprintf(url, "http://shanvishield.com/safety/safety.php?go=dTrigger&did=%ld&ckey=%d&rinfo=%s", did, ckey, rinfo);
     return processUrl(url);
 }
-bool cancelTrigger(long did, uint32_t ckey) {
+bool cancelTrigger(long did, uint32_t ckey, const char* rinfo) {
     char url[256];
-    sprintf(url, "http://shanvishield.com/safety/safety.php?go=dTrigger&did=%ld&ckey=%d", did, ckey);
+    sprintf(url, "http://shanvishield.com/safety/safety.php?go=cTrigger&did=%ld&ckey=%d&rinfo=%s", did, ckey, rinfo);
     return processUrl(url);
 }
-bool sendLocation(long did, float lat, float lon, float alt) {
+bool sendLocation(long did, float lat, float lon, float alt, const char* rinfo) {
     char url[256];
-    sprintf(url, "http://shanvishield.com/safety/safety.php?go=addDeviceLocation&did=%ld&lat=%f&lon=%f&alt=%f", did, lat, lon, alt);
+    sprintf(url, "http://shanvishield.com/safety/safety.php?go=addDeviceLocation&did=%ld&lat=%f&lon=%f&alt=%f&rinfo=%s",
+    		did, lat, lon, alt, rinfo);
     return processUrl(url);
 }
 
