@@ -167,7 +167,7 @@ void addQueue(sh_packet_t * p_pkt) {
 	if (hc > 10) {
 		return;
 	}
-	if (qc > 10) {
+	if (qc > 3) {
 		return;
 	}
 	set_q_count(p_pkt, qc + 1);

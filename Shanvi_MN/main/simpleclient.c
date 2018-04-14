@@ -100,6 +100,7 @@ struct gattc_profile_inst {
     uint16_t cccd_handle;
     esp_bd_addr_t remote_bda;
     bool ready_to_send;
+    esp_bt_uuid_t *service_uuid;
 };
 
 /* One gatt-based profile one app_id and one gattc_if, this array will store the gattc_if returned by ESP_GATTS_REG_EVT */
@@ -155,7 +156,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
     switch (event) {
     case ESP_GATTC_REG_EVT:
         ESP_LOGI(GATTC_TAG, "REG_EVT");
-        pre_start_simple_client_scan();
+        //pre_start_simple_client_scan();
         break;
     case ESP_GATTC_CONNECT_EVT:{
         ESP_LOGI(GATTC_TAG, "ESP_GATTC_CONNECT_EVT conn_id %d, if %d", p_data->connect.conn_id, gattc_if);
@@ -182,7 +183,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
             ESP_LOGE(GATTC_TAG,"config mtu failed, error status = %x", param->cfg_mtu.status);
         }
         ESP_LOGI(GATTC_TAG, "ESP_GATTC_CFG_MTU_EVT, Status %d, MTU %d, conn_id %d", param->cfg_mtu.status, param->cfg_mtu.mtu, param->cfg_mtu.conn_id);
-        esp_ble_gattc_search_service(gattc_if, param->cfg_mtu.conn_id, &mn_service_uuid);
+        esp_ble_gattc_search_service(gattc_if, param->cfg_mtu.conn_id, gl_profile_tab[PROFILE_A_APP_ID].service_uuid);
         break;
     case ESP_GATTC_SEARCH_RES_EVT: {
         ESP_LOGI(GATTC_TAG, "ESP_GATTC_SEARCH_RES_EVT");
@@ -333,7 +334,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
             break;
         }
         ESP_LOGI(GATTC_TAG, "write descr success ");
-
+        /*
         uint8_t write_char_data[35];
         for (int i = 0; i < sizeof(write_char_data); ++i)
         {
@@ -346,6 +347,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
                                   write_char_data,
                                   ESP_GATT_WRITE_TYPE_RSP,
                                   ESP_GATT_AUTH_REQ_NONE);
+                                  */
 
         break;
     case ESP_GATTC_SRVC_CHG_EVT: {
@@ -406,10 +408,18 @@ static void esp_gap_cb(esp_gap_ble_cb_event_t event, esp_ble_gap_cb_param_t *par
             esp_log_buffer_char(GATTC_TAG, adv_name, adv_name_len);
             ESP_LOGI(GATTC_TAG, "\n");
             if (adv_name != NULL) {
-                if ( (strlen(remote_device_name[0]) == adv_name_len &&
-                		strncmp((char *)adv_name, remote_device_name[0], adv_name_len) == 0) ||
-                		(strlen(remote_device_name[1]) == adv_name_len &&
-                				strncmp((char *)adv_name, remote_device_name[1], adv_name_len) == 0) ) {
+            	bool found = false;
+                if (strlen(remote_device_name[0]) == adv_name_len &&
+                		strncmp((char *)adv_name, remote_device_name[0], adv_name_len) == 0) {
+                	gl_profile_tab[PROFILE_A_APP_ID].service_uuid = &smph_service_uuid;
+                	found = true;
+                }
+                if (strlen(remote_device_name[1]) == adv_name_len &&
+                				strncmp((char *)adv_name, remote_device_name[1], adv_name_len) == 0) {
+                	gl_profile_tab[PROFILE_A_APP_ID].service_uuid = &mn_service_uuid;
+                	found = true;
+                }
+                if (found) {
                 	if (data_len > 0 && check_hop(data_to_send, scan_result->scan_rst.bda[5])) {
                 		break;
                 	}
@@ -501,7 +511,7 @@ bool isSimpleClientReady() {
 void send_packet_simple(uint8_t * data, int len) {
 	if (gl_profile_tab[PROFILE_A_APP_ID].ready_to_send &&
 			!check_hop(data, gl_profile_tab[PROFILE_A_APP_ID].remote_bda[5])) {
-		add_hop(data, gl_profile_tab[PROFILE_A_APP_ID].remote_bda[0]);
+		add_hop(data, gl_profile_tab[PROFILE_A_APP_ID].remote_bda[5]);
         esp_ble_gattc_write_char( gl_profile_tab[PROFILE_A_APP_ID].gattc_if,
                                   gl_profile_tab[PROFILE_A_APP_ID].conn_id,
                                   gl_profile_tab[PROFILE_A_APP_ID].rx_handle,
