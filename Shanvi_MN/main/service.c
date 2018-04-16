@@ -443,26 +443,30 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                     status_notify_enable = 0.00;
                     if (descr_value == 0x0001){
                         ESP_LOGI(GATTS_TABLE_TAG, "notify enable");
+                        status_notify_enable = 0x01;
+                        /*
                         uint8_t notify_data[3];
                         for (int i = 0; i < sizeof(notify_data); ++i)
                         {
                             notify_data[i] = i % 0xff;
                         }
-                        status_notify_enable = 0x01;
                         //the size of notify_data[] need less than MTU size
                         esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, mn_handle_table[IDX_CHAR_VAL_B],
                                                 sizeof(notify_data), notify_data, false);
+                                                */
                     }else if (descr_value == 0x0002){
                         ESP_LOGI(GATTS_TABLE_TAG, "indicate enable");
+                        status_notify_enable = 0x02;
+                        /*
                         uint8_t indicate_data[3];
                         for (int i = 0; i < sizeof(indicate_data); ++i)
                         {
                             indicate_data[i] = i % 0xff;
                         }
-                        status_notify_enable = 0x02;
                         //the size of indicate_data[] need less than MTU size
                         esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, mn_handle_table[IDX_CHAR_VAL_B],
                                             sizeof(indicate_data), indicate_data, true);
+                                            */
                     }
                     else if (descr_value == 0x0000){
                         ESP_LOGI(GATTS_TABLE_TAG, "notify/indicate disable ");
@@ -487,16 +491,20 @@ static void gatts_profile_event_handler(esp_gatts_cb_event_t event, esp_gatt_if_
                     if (descr_value == 0x0001){
                         ESP_LOGI(GATTS_TABLE_TAG, "CONN notify enable");
                         conn_enable = 0x01;
+                        /*
                         uint8_t notify_data[1] = { 0x01 };
                         esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, mn_handle_table[IDX_CHAR_VAL_E],
                                                 sizeof(notify_data), notify_data, false);
+                                                */
                     }else if (descr_value == 0x0002){
                         ESP_LOGI(GATTS_TABLE_TAG, "CONN indicate enable");
-                        uint8_t indicate_data[1] = { 0x02 };
                         conn_enable = 0x02;
+                        /*
+                        uint8_t indicate_data[1] = { 0x02 };
                         //the size of indicate_data[] need less than MTU size
                         esp_ble_gatts_send_indicate(gatts_if, param->write.conn_id, mn_handle_table[IDX_CHAR_VAL_E],
                                             sizeof(indicate_data), indicate_data, true);
+                                            */
                     }
                     else if (descr_value == 0x0000){
                         ESP_LOGI(GATTS_TABLE_TAG, "CONN notify/indicate disable ");

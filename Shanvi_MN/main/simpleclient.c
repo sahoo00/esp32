@@ -371,6 +371,7 @@ static void gattc_profile_event_handler(esp_gattc_cb_event_t event, esp_gatt_if_
         get_server = false;
         gl_profile_tab[PROFILE_A_APP_ID].ready_to_send = false;
         ESP_LOGI(GATTC_TAG, "ESP_GATTC_DISCONNECT_EVT, reason = %d", p_data->disconnect.reason);
+        data_len = 0;
         break;
     default:
         break;
@@ -520,6 +521,7 @@ void send_packet_simple(uint8_t * data, int len) {
                                   data,
                                   ESP_GATT_WRITE_TYPE_RSP,
                                   ESP_GATT_AUTH_REQ_NONE);
+        data_len = 0;
 	}
 }
 

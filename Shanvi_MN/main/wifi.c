@@ -221,12 +221,12 @@ bool processUrl(char *url) {
     return false;
 }
 
-bool sendTrigger(long did, uint32_t ckey, const char * rinfo) {
+bool sendTrigger(long did, int ckey, const char * rinfo) {
     char url[256];
     sprintf(url, "http://shanvishield.com/safety/safety.php?go=dTrigger&did=%ld&ckey=%d&rinfo=%s", did, ckey, rinfo);
     return processUrl(url);
 }
-bool cancelTrigger(long did, uint32_t ckey, const char* rinfo) {
+bool cancelTrigger(long did, int ckey, const char* rinfo) {
     char url[256];
     sprintf(url, "http://shanvishield.com/safety/safety.php?go=cTrigger&did=%ld&ckey=%d&rinfo=%s", did, ckey, rinfo);
     return processUrl(url);

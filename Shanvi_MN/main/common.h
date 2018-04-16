@@ -16,7 +16,7 @@
 #include "esp_gatt_common_api.h"
 
 
-#define MN_DEVICE_ID        0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
+#define MN_DEVICE_ID        0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, \
                               0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 #define MN_CKEY        		"73b1ed59ebfdd3e3"
 
@@ -58,8 +58,8 @@ void notify_connection(uint8_t *data, int len);
 void stop_advertising();
 void start_advertising();
 
-bool sendTrigger(long did, uint32_t ckey, const char* rinfo);
-bool cancelTrigger(long did, uint32_t ckey, const char* rinfo);
+bool sendTrigger(long did, int ckey, const char* rinfo);
+bool cancelTrigger(long did, int ckey, const char* rinfo);
 bool sendLocation(long did, float lat, float lon, float alt, const char* rinfo);
 
 void processData(uint8_t *data, int len);

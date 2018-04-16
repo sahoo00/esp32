@@ -32,7 +32,7 @@ enum {
 typedef struct sh_trg_packet {
 	uint8_t type;
 	uint8_t device_id[16];
-	uint32_t ckey;
+	int ckey;
 	uint8_t q_count;
 	uint8_t h_count;
 	uint8_t hops[MAX_HOPS_DATA];
@@ -167,7 +167,7 @@ void addQueue(sh_packet_t * p_pkt) {
 	if (hc > 10) {
 		return;
 	}
-	if (qc > 3) {
+	if (qc > 10) {
 		return;
 	}
 	set_q_count(p_pkt, qc + 1);
@@ -265,6 +265,7 @@ void processData(uint8_t *data, int len) {
 	sh_packet_t pkt;
 	bzero(&pkt, sizeof(pkt));
 	memcpy(&pkt, data, len);
+	set_q_count(&pkt, 0);
 	addQueue(&pkt);
 	if (pkt.trgn.type == PKT_CMD && len == 2) {
 		if (data[1] == 0x00) {
